@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fact-Check Chat Lab</title>
+    <style>
+      :root {
+        --ink: #10131a;
+        --ink-soft: #2b3241;
+        --paper: #f7f5ef;
+        --surface: #ffffff;
+        --accent: #0f766e;
+        --accent-2: #ea580c;
+        --true: #057a55;
+        --false: #b42318;
+        --misleading: #b54708;
+        --unverified: #344054;
+        --line: #d9dce3;
+        --shadow: 0 20px 45px rgba(16, 19, 26, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Aptos", "Trebuchet MS", sans-serif;
+        background: radial-gradient(circle at 10% 20%, #fef9c3 0%, #f7f5ef 30%, #eef2ff 100%);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 24px 16px 36px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .title-card,
+      .tips-card,
+      .chat-card,
+      .result-card {
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.82));
+        border: 1px solid rgba(217, 220, 227, 0.95);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .title-card {
+        padding: 24px;
+      }
+
+      .eyebrow {
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 8px 0 10px;
+        font-size: clamp(26px, 4.5vw, 42px);
+        line-height: 1.08;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--ink-soft);
+        line-height: 1.55;
+      }
+
+      .tips-card {
+        padding: 20px;
+      }
+
+      .tips-card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .tips-card ul {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.6;
+        color: var(--ink-soft);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .chat-card {
+        padding: 18px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 130px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 16px;
+        line-height: 1.45;
+        resize: vertical;
+        background: #fff;
+      }
+
+      textarea:focus {
+        outline: 2px solid rgba(15, 118, 110, 0.35);
+        border-color: var(--accent);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        align-items: center;
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 11px 16px;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--accent), #115e59);
+        color: #fff;
+      }
+
+      button.secondary {
+        background: linear-gradient(135deg, var(--accent-2), #9a3412);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .status {
+        color: var(--ink-soft);
+        font-size: 14px;
+      }
+
+      .result-card {
+        padding: 18px;
+        overflow: hidden;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .verdict {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .v-TRUE { background: var(--true); }
+      .v-FALSE { background: var(--false); }
+      .v-MISLEADING { background: var(--misleading); }
+      .v-UNVERIFIED { background: var(--unverified); }
+
+      .section {
+        margin-top: 16px;
+      }
+
+      .section h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      .section p {
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      .facts,
+      .sources {
+        margin: 0;
+        padding-left: 20px;
+        line-height: 1.55;
+      }
+
+      .sources a {
+        color: #0c4a6e;
+        text-decoration: none;
+      }
+
+      .sources a:hover {
+        text-decoration: underline;
+      }
+
+      .pulse {
+        animation: pulse 1.2s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
+      }
+
+      @media (max-width: 920px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <article class="title-card">
+          <p class="eyebrow">Fact-Checking POC</p>
+          <h1>Interactive Fact-Check Chat</h1>
+          <p class="subtitle">
+            Paste a headline or article excerpt and get an evidence-first verdict with
+            detailed reasoning, explicit key facts, and direct source citations.
+          </p>
+        </article>
+        <aside class="tips-card">
+          <h2>Best Input Style</h2>
+          <ul>
+            <li>Use one core claim per prompt for clean evaluations.</li>
+            <li>Avoid jokes or sarcasm if you want strict factual checking.</li>
+            <li>Ask follow-up prompts to test variants of the same claim.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="grid">
+        <article class="chat-card">
+          <label for="message">Headline or article excerpt</label>
+          <textarea id="message" placeholder="Example: The WHO announced this week that coffee doubles human lifespan."></textarea>
+          <div class="actions">
+            <button id="sendBtn">Check Facts</button>
+            <button id="sampleBtn" class="secondary">Load Sample</button>
+            <span id="status" class="status"></span>
+          </div>
+        </article>
+
+        <article id="resultCard" class="result-card hidden">
+          <span id="verdictBadge" class="verdict">UNVERIFIED</span>
+
+          <section class="section">
+            <h3>Extracted Claim</h3>
+            <p id="claim"></p>
+          </section>
+
+          <section class="section">
+            <h3>Explanation</h3>
+            <p id="explanation"></p>
+          </section>
+
+          <section class="section">
+            <h3>Reasoning</h3>
+            <p id="reasoning"></p>
+          </section>
+
+          <section class="section">
+            <h3>Key Facts with Citations</h3>
+            <ul id="facts" class="facts"></ul>
+          </section>
+
+          <section class="section">
+            <h3>Sources</h3>
+            <ol id="sources" class="sources"></ol>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const statusEl = document.getElementById("status");
+      const sendBtn = document.getElementById("sendBtn");
+      const sampleBtn = document.getElementById("sampleBtn");
+      const messageEl = document.getElementById("message");
+      const resultCard = document.getElementById("resultCard");
+      const verdictBadge = document.getElementById("verdictBadge");
+      const claimEl = document.getElementById("claim");
+      const explanationEl = document.getElementById("explanation");
+      const reasoningEl = document.getElementById("reasoning");
+      const factsEl = document.getElementById("facts");
+      const sourcesEl = document.getElementById("sources");
+
+      function setBusy(busy) {
+        sendBtn.disabled = busy;
+        sampleBtn.disabled = busy;
+        if (busy) {
+          statusEl.textContent = "Checking evidence across trusted sources...";
+          statusEl.classList.add("pulse");
+        } else {
+          statusEl.classList.remove("pulse");
+        }
+      }
+
+      function verdictClass(verdict) {
+        const safe = ["TRUE", "FALSE", "MISLEADING", "UNVERIFIED"].includes(verdict)
+          ? verdict
+          : "UNVERIFIED";
+        return `verdict v-${safe}`;
+      }
+
+      function renderResult(data) {
+        verdictBadge.textContent = data.verdict;
+        verdictBadge.className = verdictClass(data.verdict);
+
+        claimEl.textContent = data.extracted_claim || "No claim extracted.";
+        explanationEl.textContent = data.explanation || "No explanation.";
+        reasoningEl.textContent = data.reasoning || "No reasoning.";
+
+        factsEl.innerHTML = "";
+        const facts = Array.isArray(data.key_facts) ? data.key_facts : [];
+        if (facts.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "No evidence-backed facts were extracted.";
+          factsEl.appendChild(li);
+        } else {
+          for (const fact of facts) {
+            const li = document.createElement("li");
+            li.textContent = fact;
+            factsEl.appendChild(li);
+          }
+        }
+
+        sourcesEl.innerHTML = "";
+        const sources = Array.isArray(data.sources) ? data.sources : [];
+        if (sources.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "No sources captured.";
+          sourcesEl.appendChild(li);
+        } else {
+          for (const url of sources) {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = url;
+            li.appendChild(a);
+            sourcesEl.appendChild(li);
+          }
+        }
+
+        resultCard.classList.remove("hidden");
+      }
+
+      async function submitMessage() {
+        const message = messageEl.value.trim();
+        if (!message) {
+          statusEl.textContent = "Please enter a claim or excerpt first.";
+          return;
+        }
+
+        setBusy(true);
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message }),
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `Request failed (${res.status})`);
+          }
+
+          const data = await res.json();
+          renderResult(data);
+          statusEl.textContent = "Fact-check completed.";
+        } catch (error) {
+          statusEl.textContent = `Error: ${error.message}`;
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      sendBtn.addEventListener("click", submitMessage);
+      messageEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          submitMessage();
+        }
+      });
+
+      sampleBtn.addEventListener("click", () => {
+        messageEl.value = "Scientists proved this week that drinking coffee doubles lifespan overnight.";
+        statusEl.textContent = "Sample loaded. Press Check Facts.";
+      });
+    </script>
+  </body>
+</html>
