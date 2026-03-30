@@ -272,6 +272,16 @@
           </section>
 
           <section class="section">
+            <h3>Detected Region</h3>
+            <p id="region"></p>
+          </section>
+
+          <section class="section">
+            <h3>Regional Routing Logic</h3>
+            <p id="regionReasoning"></p>
+          </section>
+
+          <section class="section">
             <h3>Explanation</h3>
             <p id="explanation"></p>
           </section>
@@ -290,6 +300,11 @@
             <h3>Sources</h3>
             <ol id="sources" class="sources"></ol>
           </section>
+
+          <section class="section">
+            <h3>Trusted Domains Used</h3>
+            <ul id="trustedDomains" class="facts"></ul>
+          </section>
         </article>
       </section>
     </main>
@@ -302,10 +317,13 @@
       const resultCard = document.getElementById("resultCard");
       const verdictBadge = document.getElementById("verdictBadge");
       const claimEl = document.getElementById("claim");
+      const regionEl = document.getElementById("region");
+      const regionReasoningEl = document.getElementById("regionReasoning");
       const explanationEl = document.getElementById("explanation");
       const reasoningEl = document.getElementById("reasoning");
       const factsEl = document.getElementById("facts");
       const sourcesEl = document.getElementById("sources");
+      const trustedDomainsEl = document.getElementById("trustedDomains");
 
       function setBusy(busy) {
         sendBtn.disabled = busy;
@@ -330,6 +348,8 @@
         verdictBadge.className = verdictClass(data.verdict);
 
         claimEl.textContent = data.extracted_claim || "No claim extracted.";
+        regionEl.textContent = data.country_code || "GLOBAL";
+        regionReasoningEl.textContent = data.region_reasoning || "No regional reasoning.";
         explanationEl.textContent = data.explanation || "No explanation.";
         reasoningEl.textContent = data.reasoning || "No reasoning.";
 
@@ -363,6 +383,20 @@
             a.textContent = url;
             li.appendChild(a);
             sourcesEl.appendChild(li);
+          }
+        }
+
+        trustedDomainsEl.innerHTML = "";
+        const trustedDomains = Array.isArray(data.trusted_domains) ? data.trusted_domains : [];
+        if (trustedDomains.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "No trusted domains recorded.";
+          trustedDomainsEl.appendChild(li);
+        } else {
+          for (const domain of trustedDomains) {
+            const li = document.createElement("li");
+            li.textContent = domain;
+            trustedDomainsEl.appendChild(li);
           }
         }
 

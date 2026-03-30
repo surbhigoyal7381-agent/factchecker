@@ -26,6 +26,9 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     verdict: Literal["TRUE", "FALSE", "MISLEADING", "UNVERIFIED"]
     extracted_claim: str
+    country_code: str
+    region_reasoning: str
+    trusted_domains: List[str]
     explanation: str
     reasoning: str
     key_facts: List[str]
@@ -71,6 +74,9 @@ def chat(payload: ChatRequest) -> Dict[str, Any]:
     return {
         "verdict": verdict,
         "extracted_claim": result.get("extracted_claim", ""),
+        "country_code": result.get("country_code", "GLOBAL"),
+        "region_reasoning": result.get("region_reasoning", "No regional reasoning available."),
+        "trusted_domains": result.get("trusted_domains", []),
         "explanation": result.get("explanation", "No explanation available."),
         "reasoning": result.get("reasoning", "No reasoning available."),
         "key_facts": result.get("key_facts", []),
