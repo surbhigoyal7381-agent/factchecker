@@ -36,15 +36,12 @@ jobs:
 
       - name: Prepare SSH key
         run: |
-          install -m 700 -d ~/.ssh
-          # Accept either DEPLOY_SSH_KEY or SSH_PRIVATE_KEY (if you used a different secret name)
-          if [ -n '${{ secrets.DEPLOY_SSH_KEY }}' ]; then
-            printf '%s' '${{ secrets.DEPLOY_SSH_KEY }}' > ~/.ssh/id_ed25519
-          else
-            printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/id_ed25519
-          fi
+          mkdir -p ~/.ssh
+          printf '%s' "$PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+        env:
+          PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
 
       - name: Sync project to server
         run: |
