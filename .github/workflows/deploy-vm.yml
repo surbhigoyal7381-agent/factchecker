@@ -96,11 +96,11 @@ ENVFILE
           sed \
             -e "s|__APP_DIR__|$APP_DIR|g" \
             -e "s|__APP_USER__|$USER|g" \
-            deploy/factchecker.service.template | sudo tee /etc/systemd/system/factchecker.service >/dev/null
+            deploy/fakechecker.service.template | sudo tee /etc/systemd/system/fakechecker.service >/dev/null
 
           sudo systemctl daemon-reload
-          sudo systemctl enable factchecker.service
-          sudo systemctl restart factchecker.service
+          sudo systemctl enable fakechecker.service
+          sudo systemctl restart fakechecker.service
 
           if [ -n "${APP_DOMAIN:-}" ]; then
             if ! command -v nginx >/dev/null 2>&1; then
@@ -111,9 +111,9 @@ ENVFILE
             sed \
               -e "s|__APP_DOMAIN__|$APP_DOMAIN|g" \
               -e "s|__APP_DIR__|$APP_DIR|g" \
-              deploy/nginx.factchecker.conf.template | sudo tee /etc/nginx/sites-available/factchecker >/dev/null
+              deploy/nginx.fakechecker.conf.template | sudo tee /etc/nginx/sites-available/fakechecker >/dev/null
 
-            sudo ln -sf /etc/nginx/sites-available/factchecker /etc/nginx/sites-enabled/factchecker
+            sudo ln -sf /etc/nginx/sites-available/fakechecker /etc/nginx/sites-enabled/fakechecker
             sudo nginx -t
             sudo systemctl reload nginx
           fi
