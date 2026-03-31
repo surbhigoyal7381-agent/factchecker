@@ -51,11 +51,15 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           if [ -n "${{ secrets.DEPLOY_SSH_KEY }}" ]; then
-            printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+            printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           else
-            printf '%s' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+            printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           fi
           chmod 600 ~/.ssh/id_ed25519
+          # Try converting to PEM format if ssh-keygen supports it (avoids libcrypto errors)
+          if command -v ssh-keygen >/dev/null 2>&1; then
+            ssh-keygen -p -f ~/.ssh/id_ed25519 -N "" -m PEM || true
+          fi
           ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Sync project to server
@@ -66,12 +70,12 @@ jobs:
             --exclude '.venv/' \
             --exclude '__pycache__/' \
             --exclude '.env' \
-            -e "ssh -p ${DEPLOY_PORT:-22}" \
+            -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_DIR}/"
 
       - name: Configure app and restart service
         run: |
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "cd '${APP_DIR}' && \
              APP_DIR='${APP_DIR}' APP_DOMAIN='${APP_DOMAIN}' OPENAI_API_KEY='${OPENAI_API_KEY}' \
              OPENAI_MODEL='${OPENAI_MODEL:-gpt-4o-mini}' SEARCH_PROVIDER='${SEARCH_PROVIDER:-serpapi}' \
