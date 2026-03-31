@@ -15,7 +15,8 @@ jobs:
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
       APP_DIR: ${{ secrets.APP_DIR }}
-      APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
+      # Default application domain for deployment
+      APP_DOMAIN: "fakechecker.kinexus.co.in"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
       SEARCH_PROVIDER: ${{ secrets.SEARCH_PROVIDER }}
@@ -36,7 +37,12 @@ jobs:
       - name: Prepare SSH key
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s' '${{ secrets.DEPLOY_SSH_KEY }}' > ~/.ssh/id_ed25519
+          # Accept either DEPLOY_SSH_KEY or SSH_PRIVATE_KEY (if you used a different secret name)
+          if [ -n '${{ secrets.DEPLOY_SSH_KEY }}' ]; then
+            printf '%s' '${{ secrets.DEPLOY_SSH_KEY }}' > ~/.ssh/id_ed25519
+          else
+            printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/id_ed25519
+          fi
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
