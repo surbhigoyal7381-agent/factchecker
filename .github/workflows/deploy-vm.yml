@@ -27,6 +27,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug required env presence
+        run: |
+          echo "Checking presence of required env vars (will not show values):"
+          for v in DEPLOY_HOST DEPLOY_USER APP_DIR OPENAI_API_KEY; do
+            if [ -n "${!v:-}" ]; then
+              echo "$v=SET"
+            else
+              echo "$v=UNSET"
+            fi
+          done
+
       - name: Validate required secrets
         run: |
           test -n "$DEPLOY_HOST"
