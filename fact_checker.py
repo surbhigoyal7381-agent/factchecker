@@ -23,6 +23,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
+from PIL import Image, ImageChops
+from io import BytesIO
 
 load_dotenv(override=True)
 
@@ -622,6 +624,55 @@ def judge_node(state: FactCheckState) -> FactCheckState:
         "reasoning": reasoning,
         "key_facts": key_facts,
     }
+
+
+def detect_image_fake(image_path: str) -> dict:
+    """
+    Simple Error Level Analysis (ELA) based detector for potential image manipulation.
+
+    Logic implemented:
+    - Recompress the input image to JPEG at quality=90 and compute the absolute
+      difference between the original and recompressed image (ELA image).
+    - Convert ELA result to grayscale and compute the maximum and mean pixel
+      differences as a lightweight signal of localized editing.
+    - Heuristic thresholds:
+        * If max_diff > 60 or mean_diff > 15 => verdict = FAKE
+        * If max_diff > 30 or mean_diff > 6  => verdict = UNCERTAIN
+        * Otherwise                              => verdict = REAL
+
+    Notes:
+    - This is a lightweight heuristic intended for a quick signal, not a
+      definitive forensic tool. Use a dedicated model or service for production
+      quality manipulation detection.
+
+    Returns a dict with keys: verdict (REAL|FAKE|UNCERTAIN), score (mean), max, explanation
+    """
+    try:
+        orig = Image.open(image_path).convert("RGB")
+        buf = BytesIO()
+        orig.save(buf, "JPEG", quality=90)
+        buf.seek(0)
+        recompressed = Image.open(buf).convert("RGB")
+        ela = ImageChops.difference(orig, recompressed)
+        ela_gray = ela.convert("L")
+        extrema = ela_gray.getextrema() or (0, 0)
+        max_diff = extrema[1]
+        pixels = list(ela_gray.getdata())
+        mean_diff = float(sum(pixels) / len(pixels)) if pixels else 0.0
+
+        if max_diff > 60 or mean_diff > 15:
+            verdict = "FAKE"
+            explanation = "High error-level variations suggest possible manipulation or localized editing."
+        elif max_diff > 30 or mean_diff > 6:
+            verdict = "UNCERTAIN"
+            explanation = "Moderate error-level variations; could be editing, heavy filtering, or recompression artifacts."
+        else:
+            verdict = "REAL"
+            explanation = "Low error-level variation consistent with an unedited image or uniform compression."
+
+        return {"verdict": verdict, "score": mean_diff, "max": max_diff, "explanation": explanation}
+    except Exception as exc:
+        return {"verdict": "UNCERTAIN", "score": 0.0, "max": 0, "explanation": f"Detection failed: {exc}"}
 
 
 def reporter_node(state: FactCheckState) -> FactCheckState:

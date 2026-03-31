@@ -263,6 +263,21 @@
           </div>
         </article>
 
+        <article class="chat-card">
+          <label for="imageInput">Upload an image to check (JPEG/PNG)</label>
+          <input type="file" id="imageInput" accept="image/*" />
+          <div class="actions">
+            <button id="uploadBtn">Analyze Image</button>
+            <span id="imageStatus" class="status"></span>
+          </div>
+          <div id="imageResult" class="section hidden">
+            <h3>Image Analysis Result</h3>
+            <p id="imageVerdict"></p>
+            <p id="imageExplanation"></p>
+            <img id="imagePreview" src="" alt="Uploaded image preview" style="max-width:100%;border-radius:12px;margin-top:8px;" />
+          </div>
+        </article>
+
         <article id="resultCard" class="result-card hidden">
           <span id="verdictBadge" class="verdict">UNVERIFIED</span>
 
@@ -324,6 +339,13 @@
       const factsEl = document.getElementById("facts");
       const sourcesEl = document.getElementById("sources");
       const trustedDomainsEl = document.getElementById("trustedDomains");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const imageInput = document.getElementById("imageInput");
+      const imageStatus = document.getElementById("imageStatus");
+      const imageResult = document.getElementById("imageResult");
+      const imageVerdict = document.getElementById("imageVerdict");
+      const imageExplanation = document.getElementById("imageExplanation");
+      const imagePreview = document.getElementById("imagePreview");
 
       function setBusy(busy) {
         sendBtn.disabled = busy;
@@ -444,6 +466,44 @@
         messageEl.value = "Scientists proved this week that drinking coffee doubles lifespan overnight.";
         statusEl.textContent = "Sample loaded. Press Check Facts.";
       });
+
+      async function uploadImage() {
+        const file = imageInput.files && imageInput.files[0];
+        if (!file) {
+          imageStatus.textContent = "Please select an image file first.";
+          return;
+        }
+
+        imageStatus.textContent = "Analyzing image...";
+        uploadBtn.disabled = true;
+        try {
+          const form = new FormData();
+          form.append('file', file, file.name);
+
+          const res = await fetch('/api/image-check', {
+            method: 'POST',
+            body: form,
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `Request failed (${res.status})`);
+          }
+
+          const data = await res.json();
+          imageVerdict.textContent = `Verdict: ${data.verdict || 'UNCERTAIN'}`;
+          imageExplanation.textContent = data.explanation || '';
+          imagePreview.src = data.file_url || '';
+          imageResult.classList.remove('hidden');
+          imageStatus.textContent = 'Image analysis completed.';
+        } catch (err) {
+          imageStatus.textContent = `Error: ${err.message}`;
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      }
+
+      uploadBtn.addEventListener('click', uploadImage);
     </script>
   </body>
 </html>
